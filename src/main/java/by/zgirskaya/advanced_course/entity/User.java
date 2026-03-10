@@ -1,12 +1,16 @@
 package by.zgirskaya.advanced_course.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter @Setter
 public class User extends AbstractEntity {
 
   @Id
@@ -19,6 +23,6 @@ public class User extends AbstractEntity {
   private String email;
   private boolean active;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-  private List<PaymentCard> cards;
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<PaymentCard> cards = new ArrayList<>();
 }
