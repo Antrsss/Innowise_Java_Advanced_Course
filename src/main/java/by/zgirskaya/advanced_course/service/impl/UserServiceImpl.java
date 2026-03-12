@@ -1,9 +1,7 @@
 package by.zgirskaya.advanced_course.service.impl;
 
-import by.zgirskaya.advanced_course.entity.PaymentCard;
 import by.zgirskaya.advanced_course.entity.User;
 import by.zgirskaya.advanced_course.exception.UserServiceException;
-import by.zgirskaya.advanced_course.dao.CardDao;
 import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +15,7 @@ public class UserServiceImpl implements UserService {
   private final UserDao userDao;
 
   @Override
+  @Transactional
   public User createUser(User user) throws UserServiceException {
     if (user.getCards() != null && user.getCards().size() > 5) {
       throw new UserServiceException("User cannot have more than 5 cards!");
@@ -30,11 +29,13 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
   public void setUserStatus(Long id, boolean status) {
     userDao.setUserStatus(id, status);
   }
 
   @Override
+  @Transactional
   public void deleteUser(Long id) {
     userDao.deleteById(id);
   }

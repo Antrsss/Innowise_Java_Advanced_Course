@@ -20,6 +20,7 @@ public class CardServiceImpl implements CardService {
   private final CardDao cardDao;
 
   @Override
+  @Transactional
   public PaymentCard createCard(PaymentCard card) throws CardServiceException {
     if (card.getUser() == null || card.getUser().getId() == null) {
       throw new CardServiceException("Card must be assigned to a user!");
@@ -47,11 +48,13 @@ public class CardServiceImpl implements CardService {
   }
 
   @Override
+  @Transactional
   public void setCardStatus(Long id, boolean status) {
     cardDao.setCardStatus(id, status);
   }
 
   @Override
+  @Transactional
   public void deleteCard(Long id) {
     cardDao.deleteById(id);
   }
