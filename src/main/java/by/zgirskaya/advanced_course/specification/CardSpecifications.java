@@ -6,6 +6,9 @@ import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 
 public class CardSpecifications {
+
+  private CardSpecifications() {}
+
   public static Specification<PaymentCard> hasUserName(String name) {
     return (root, query, cb) -> {
       if (name == null || name.isEmpty()) return null;

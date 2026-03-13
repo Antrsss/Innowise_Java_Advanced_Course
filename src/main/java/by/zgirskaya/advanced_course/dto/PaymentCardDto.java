@@ -16,4 +16,6 @@ public class PaymentCardDto {
 
   private String expirationDate;
   private boolean active;
+
+  private Long userId;
 }

@@ -4,7 +4,11 @@ import by.zgirskaya.advanced_course.entity.User;
 import by.zgirskaya.advanced_course.exception.UserServiceException;
 import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.service.UserService;
+import by.zgirskaya.advanced_course.specification.UserSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +30,13 @@ public class UserServiceImpl implements UserService {
   @Override
   public User findUserById(Long id) throws UserServiceException {
     return userDao.findById(id).orElseThrow(() -> new UserServiceException("User not found!"));
+  }
+
+  @Override
+  public Page<User> findAll(String name, String surname, Pageable pageable) {
+    Specification<User> spec = Specification.where(UserSpecifications.hasName(name))
+        .and(UserSpecifications.hasSurname(surname));
+    return userDao.findAll(spec, pageable);
   }
 
   @Override

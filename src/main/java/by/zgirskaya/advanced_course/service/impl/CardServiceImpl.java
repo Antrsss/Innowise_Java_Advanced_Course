@@ -6,7 +6,11 @@ import by.zgirskaya.advanced_course.entity.PaymentCard;
 import by.zgirskaya.advanced_course.entity.User;
 import by.zgirskaya.advanced_course.exception.CardServiceException;
 import by.zgirskaya.advanced_course.service.CardService;
+import by.zgirskaya.advanced_course.specification.CardSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +49,15 @@ public class CardServiceImpl implements CardService {
   @Override
   public List<PaymentCard> findCardsByUserId(Long id) {
     return cardDao.findCardsByUserId(id);
+  }
+
+  @Override
+  public Page<PaymentCard> findAll(String name, String surname, Pageable pageable) {
+    Specification<PaymentCard> spec = Specification
+        .where(CardSpecifications.hasUserName(name))
+        .and(CardSpecifications.hasUserSurname(surname));
+
+    return cardDao.findAll(spec, pageable);
   }
 
   @Override

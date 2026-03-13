@@ -4,6 +4,9 @@ import by.zgirskaya.advanced_course.entity.User;
 import org.springframework.data.jpa.domain.Specification;
 
 public class UserSpecifications {
+
+  private UserSpecifications() {}
+
   public static Specification<User> hasName(String name) {
     return (root, query, cb) ->
         name == null ? null : cb.equal(root.get("name"), name);
