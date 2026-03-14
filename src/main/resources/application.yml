@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: advanced-course
+  profiles:
+    active: local
+  cache:
+    type: redis

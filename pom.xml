@@ -145,6 +145,13 @@
 					<compilerArgs>--enable-preview</compilerArgs>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>by.zgirskaya.advanced_course.AdvancedCourseApplication</mainClass>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
