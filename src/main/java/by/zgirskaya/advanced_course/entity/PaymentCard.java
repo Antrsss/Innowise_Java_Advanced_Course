@@ -1,5 +1,6 @@
 package by.zgirskaya.advanced_course.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,6 +16,7 @@ public class PaymentCard extends AbstractEntity {
 
   @ManyToOne
   @JoinColumn(name = "user_id")
+  @JsonIgnore
   private User user;
 
   private String number;

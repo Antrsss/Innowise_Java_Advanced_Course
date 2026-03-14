@@ -6,6 +6,8 @@ import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.service.UserService;
 import by.zgirskaya.advanced_course.specification.UserSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -28,8 +30,10 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
+  @Cacheable(value = "users", key = "#id")
   public User findUserById(Long id) throws UserServiceException {
-    return userDao.findById(id).orElseThrow(() -> new UserServiceException("User not found!"));
+    return userDao.findByIdWithCards(id).orElseThrow(() -> new UserServiceException("User not found!"));
   }
 
   @Override
@@ -41,12 +45,14 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
+  @CacheEvict(value = "users", key = "#id")
   public void setUserStatus(Long id, boolean status) {
     userDao.setUserStatus(id, status);
   }
 
   @Override
   @Transactional
+  @CacheEvict(value = "users", key = "#id")
   public void deleteUser(Long id) {
     userDao.deleteById(id);
   }

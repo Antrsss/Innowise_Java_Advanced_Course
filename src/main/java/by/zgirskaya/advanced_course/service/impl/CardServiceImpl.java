@@ -8,6 +8,7 @@ import by.zgirskaya.advanced_course.exception.CardServiceException;
 import by.zgirskaya.advanced_course.service.CardService;
 import by.zgirskaya.advanced_course.specification.CardSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,6 +26,7 @@ public class CardServiceImpl implements CardService {
 
   @Override
   @Transactional
+  @CacheEvict(value = "users", key = "#card.user.id")
   public PaymentCard createCard(PaymentCard card) throws CardServiceException {
     if (card.getUser() == null || card.getUser().getId() == null) {
       throw new CardServiceException("Card must be assigned to a user!");
