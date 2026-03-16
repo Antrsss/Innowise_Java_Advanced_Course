@@ -1,5 +1,6 @@
 package by.zgirskaya.advanced_course.service;
 
+import by.zgirskaya.advanced_course.dao.CardDao;
 import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.entity.PaymentCard;
 import by.zgirskaya.advanced_course.entity.User;
@@ -22,6 +23,9 @@ class UserServiceImplTest {
 
   @Mock
   private UserDao userDao;
+
+  @Mock
+  private CardDao cardDao;
 
   @InjectMocks
   private UserServiceImpl userService;
@@ -71,12 +75,8 @@ class UserServiceImplTest {
   @Test
   void setUserStatus_CallsDao() {
     userService.setUserStatus(1L, true);
-    verify(userDao).setUserStatus(1L, true);
-  }
 
-  @Test
-  void deleteUser_CallsDao() {
-    userService.deleteUser(1L);
-    verify(userDao).deleteById(1L);
+    verify(userDao).setUserStatus(1L, true);
+    verify(cardDao).setCardsStatusByUserId(1L, true);
   }
 }

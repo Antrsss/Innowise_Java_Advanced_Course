@@ -1,5 +1,6 @@
 package by.zgirskaya.advanced_course.service.impl;
 
+import by.zgirskaya.advanced_course.dao.CardDao;
 import by.zgirskaya.advanced_course.entity.User;
 import by.zgirskaya.advanced_course.exception.UserServiceException;
 import by.zgirskaya.advanced_course.dao.UserDao;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
   private final UserDao userDao;
+  private final CardDao cardDao;
 
   @Override
   @Transactional
@@ -39,7 +41,8 @@ public class UserServiceImpl implements UserService {
   @Override
   public Page<User> findAll(String name, String surname, Pageable pageable) {
     Specification<User> spec = Specification.where(UserSpecifications.hasName(name))
-        .and(UserSpecifications.hasSurname(surname));
+        .and(UserSpecifications.hasSurname(surname))
+        .and(UserSpecifications.isActive());
     return userDao.findAll(spec, pageable);
   }
 
@@ -48,12 +51,6 @@ public class UserServiceImpl implements UserService {
   @CacheEvict(value = "users", key = "#id")
   public void setUserStatus(Long id, boolean status) {
     userDao.setUserStatus(id, status);
-  }
-
-  @Override
-  @Transactional
-  @CacheEvict(value = "users", key = "#id")
-  public void deleteUser(Long id) {
-    userDao.deleteById(id);
+    cardDao.setCardsStatusByUserId(id, status);
   }
 }

@@ -18,7 +18,6 @@ import tools.jackson.databind.ObjectMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.is;
 
 @SpringBootTest
 class UserFlowIntegrationTest extends BaseIntegrationTest {
@@ -53,7 +52,7 @@ class UserFlowIntegrationTest extends BaseIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(userDto)))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.name", is("Darya")))
+        .andExpect(jsonPath("$.name").value("Darya"))
         .andReturn();
 
     UserDto createdUser = objectMapper.readValue(createResult.getResponse().getContentAsString(), UserDto.class);
@@ -61,26 +60,27 @@ class UserFlowIntegrationTest extends BaseIntegrationTest {
 
     mockMvc.perform(get("/api/users/{id}", userId))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id", is(userId.intValue())));
+        .andExpect(jsonPath("$.id").value(userId));
 
     mockMvc.perform(patch("/api/users/{id}/status", userId)
             .param("active", "false"))
         .andExpect(status().isOk());
 
-    User userInDb = userDao.findById(userId).orElseThrow();
-    assertThat(userInDb.isActive()).isFalse();
+    assertThat(userDao.findById(userId).get().isActive()).isFalse();
 
     mockMvc.perform(get("/api/users")
             .param("name", "Darya")
             .param("page", "0")
             .param("size", "10"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[0].name", is("Darya")));
+        .andExpect(status().isOk());
 
     mockMvc.perform(delete("/api/users/{id}", userId))
         .andExpect(status().isNoContent());
 
-    assertThat(userDao.findById(userId)).isEmpty();
+    User finalUser = userDao.findById(userId)
+        .orElseThrow(() -> new AssertionError("Запись должна остаться в БД при Soft Delete"));
+
+    assertThat(finalUser.isActive()).isFalse();
   }
 
   @Test

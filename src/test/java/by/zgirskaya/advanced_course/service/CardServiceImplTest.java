@@ -40,12 +40,14 @@ class CardServiceImplTest {
   void createCard_Success() throws CardServiceException {
     User user = new User();
     user.setId(1L);
+    user.setActive(true);
     user.setCards(new ArrayList<>());
 
     PaymentCard card = new PaymentCard();
     card.setUser(user);
 
-    when(userDao.findById(1L)).thenReturn(Optional.of(user));
+    when(userDao.findByIdWithLock(1L)).thenReturn(Optional.of(user));
+    when(cardDao.countByUserId(1L)).thenReturn(0L);
     when(cardDao.save(any(PaymentCard.class))).thenReturn(card);
 
     PaymentCard result = cardService.createCard(card);
@@ -58,15 +60,21 @@ class CardServiceImplTest {
   void createCard_ThrowsException_WhenLimitReached() {
     User user = new User();
     user.setId(1L);
+    user.setActive(true);
 
     List<PaymentCard> cards = new ArrayList<>();
-    for (int i = 0; i < 5; i++) cards.add(new PaymentCard());
+    for (int i = 0; i < 5; i++) {
+      PaymentCard c = new PaymentCard();
+      c.setActive(true);
+      cards.add(c);
+    }
     user.setCards(cards);
 
     PaymentCard newCard = new PaymentCard();
     newCard.setUser(user);
 
-    when(userDao.findById(1L)).thenReturn(Optional.of(user));
+    when(userDao.findByIdWithLock(1L)).thenReturn(Optional.of(user));
+    when(cardDao.countByUserId(1L)).thenReturn(5L);
 
     CardServiceException exception = assertThrows(CardServiceException.class,
         () -> cardService.createCard(newCard));
