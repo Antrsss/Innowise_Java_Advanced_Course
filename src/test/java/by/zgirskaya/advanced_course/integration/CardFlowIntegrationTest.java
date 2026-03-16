@@ -124,6 +124,7 @@ class CardFlowIntegrationTest extends BaseIntegrationTest {
     mockMvc.perform(get("/api/cards")
             .param("name", "Darya"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content", hasSize(0)));
+        .andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].active").value(false));
   }
 }

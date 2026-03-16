@@ -10,5 +10,4 @@ public interface UserService {
   User findUserById(Long id) throws UserServiceException;
   Page<User> findAll(String name, String surname, Pageable pageable);
   void setUserStatus(Long id, boolean status);
-  void deleteUser(Long id);
 }

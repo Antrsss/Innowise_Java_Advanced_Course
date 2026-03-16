@@ -3,7 +3,6 @@ package by.zgirskaya.advanced_course.service.impl;
 import by.zgirskaya.advanced_course.dao.CardDao;
 import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.entity.PaymentCard;
-import by.zgirskaya.advanced_course.entity.User;
 import by.zgirskaya.advanced_course.exception.CardServiceException;
 import by.zgirskaya.advanced_course.service.CardService;
 import by.zgirskaya.advanced_course.specification.CardSpecifications;
@@ -28,14 +27,12 @@ public class CardServiceImpl implements CardService {
   @Transactional
   @CacheEvict(value = "users", key = "#card.user.id")
   public PaymentCard createCard(PaymentCard card) throws CardServiceException {
-    if (card.getUser() == null || card.getUser().getId() == null) {
-      throw new CardServiceException("Card must be assigned to a user!");
-    }
+    Long userId = card.getUser().getId();
 
-    User user = userDao.findById(card.getUser().getId())
-        .orElseThrow(() -> new CardServiceException("User not found!"));
+    userDao.findByIdWithLock(userId)
+        .orElseThrow(() -> new CardServiceException("User not found or inactive!"));
 
-    if (user.getCards().size() >= 5) {
+    if (cardDao.countByUserId(userId) >= 5) {
       throw new CardServiceException("User already has 5 cards. Limit reached!");
     }
 
@@ -64,13 +61,12 @@ public class CardServiceImpl implements CardService {
 
   @Override
   @Transactional
-  public void setCardStatus(Long id, boolean status) {
+  @CacheEvict(value = "users", key = "#result")
+  public Long setCardStatus(Long id, boolean status) throws CardServiceException {
+    PaymentCard card = cardDao.findById(id)
+        .orElseThrow(() -> new CardServiceException("Card not found"));
     cardDao.setCardStatus(id, status);
-  }
 
-  @Override
-  @Transactional
-  public void deleteCard(Long id) {
-    cardDao.deleteById(id);
+    return card.getUser().getId();
   }
 }
