@@ -16,4 +16,8 @@ public class UserSpecifications {
     return (root, query, cb) ->
         surname == null ? null : cb.equal(root.get("surname"), surname);
   }
+
+  public static Specification<User> isActive() {
+    return (root, query, cb) -> cb.isTrue(root.get("active"));
+  }
 }

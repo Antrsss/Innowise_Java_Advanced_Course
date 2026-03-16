@@ -55,14 +55,17 @@ public class CardController {
   }
 
   @PatchMapping("/{id}/status")
-  public ResponseEntity<Void> setStatus(@PathVariable Long id, @RequestParam boolean active) {
+  public ResponseEntity<Void> setStatus(
+      @PathVariable Long id,
+      @RequestParam boolean active) throws CardServiceException {
     cardService.setCardStatus(id, active);
     return ResponseEntity.ok().build();
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteCard(@PathVariable Long id) {
-    cardService.deleteCard(id);
+  public ResponseEntity<Void> deleteCard(@PathVariable Long id)
+      throws CardServiceException {
+    cardService.setCardStatus(id, false);
     return ResponseEntity.noContent().build();
   }
 }

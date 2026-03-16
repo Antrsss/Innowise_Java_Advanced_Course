@@ -12,6 +12,5 @@ public interface CardService {
   PaymentCard findCardById(Long id) throws CardServiceException;
   List<PaymentCard> findCardsByUserId(Long id);
   Page<PaymentCard> findAll(String name, String surname, Pageable pageable);
-  void setCardStatus(Long id, boolean status);
-  void deleteCard(Long id);
+  Long setCardStatus(Long id, boolean status) throws CardServiceException;
 }
