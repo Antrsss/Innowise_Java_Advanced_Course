@@ -3,8 +3,6 @@ name: CI Pipeline
 on:
   push:
     branches: [ "main", "user_service" ]
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   build-analyze-and-docker:

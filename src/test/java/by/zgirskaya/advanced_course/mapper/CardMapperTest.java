@@ -142,4 +142,143 @@ class CardMapperTest {
     assertFalse(result.isActive());
     assertNull(result.getUserId());
   }
+
+  @Test
+  void testMapUser_WithValidId_ShouldReturnUser() {
+    Long userId = 99L;
+
+    User result = cardMapper.mapUser(userId);
+
+    assertNotNull(result);
+    assertEquals(userId, result.getId());
+    assertNull(result.getName());
+    assertNull(result.getSurname());
+    assertNull(result.getEmail());
+  }
+
+  @Test
+  void testMapUser_WithNullId_ShouldReturnNull() {
+    User result = cardMapper.mapUser(null);
+    assertNull(result);
+  }
+
+  @Test
+  void testToEntity_WithZeroUserId_ShouldMapWithUser() {
+    paymentCardDto.setUserId(0L);
+
+    PaymentCard result = cardMapper.toEntity(paymentCardDto);
+
+    assertNotNull(result);
+    assertNotNull(result.getUser());
+    assertEquals(0L, result.getUser().getId());
+  }
+
+  @Test
+  void testToEntity_WithNegativeUserId_ShouldMapWithUser() {
+    paymentCardDto.setUserId(-5L);
+
+    PaymentCard result = cardMapper.toEntity(paymentCardDto);
+
+    assertNotNull(result);
+    assertNotNull(result.getUser());
+    assertEquals(-5L, result.getUser().getId());
+  }
+
+  @Test
+  void testToDto_WithUserHavingOnlyId_ShouldMapUserId() {
+    User userWithOnlyId = new User();
+    userWithOnlyId.setId(42L);
+
+    PaymentCard card = new PaymentCard();
+    card.setId(100L);
+    card.setNumber("1111222233334444");
+    card.setHolder("Test Holder");
+    card.setExpirationDate("12/30");
+    card.setActive(true);
+    card.setUser(userWithOnlyId);
+
+    PaymentCardDto result = cardMapper.toDto(card);
+
+    assertNotNull(result);
+    assertEquals(42L, result.getUserId());
+    assertEquals("Test Holder", result.getHolder());
+  }
+
+  @Test
+  void testToEntity_WithEmptyStringFields_ShouldMapEmptyStrings() {
+    paymentCardDto.setNumber("");
+    paymentCardDto.setHolder("");
+    paymentCardDto.setExpirationDate("");
+
+    PaymentCard result = cardMapper.toEntity(paymentCardDto);
+
+    assertNotNull(result);
+    assertEquals("", result.getNumber());
+    assertEquals("", result.getHolder());
+    assertEquals("", result.getExpirationDate());
+    assertNotNull(result.getUser());
+    assertEquals(1L, result.getUser().getId());
+  }
+
+  @Test
+  void testToDto_WithEmptyStringFields_ShouldMapEmptyStrings() {
+    paymentCard.setNumber("");
+    paymentCard.setHolder("");
+    paymentCard.setExpirationDate("");
+
+    PaymentCardDto result = cardMapper.toDto(paymentCard);
+
+    assertNotNull(result);
+    assertEquals("", result.getNumber());
+    assertEquals("", result.getHolder());
+    assertEquals("", result.getExpirationDate());
+    assertEquals(1L, result.getUserId());
+  }
+
+  @Test
+  void testToEntity_WithSpecialCharacters_ShouldMapCorrectly() {
+    paymentCardDto.setNumber("1234-5678-9012-3456");
+    paymentCardDto.setHolder("O'Connor Smith-Johnson");
+    paymentCardDto.setExpirationDate("12/25");
+
+    PaymentCard result = cardMapper.toEntity(paymentCardDto);
+
+    assertNotNull(result);
+    assertEquals("1234-5678-9012-3456", result.getNumber());
+    assertEquals("O'Connor Smith-Johnson", result.getHolder());
+    assertEquals("12/25", result.getExpirationDate());
+  }
+
+  @Test
+  void testMapUser_AlwaysReturnsNewInstance() {
+    Long userId = 1L;
+
+    User user1 = cardMapper.mapUser(userId);
+    User user2 = cardMapper.mapUser(userId);
+
+    assertNotSame(user1, user2, "Should return different instances");
+    assertEquals(user1.getId(), user2.getId());
+  }
+
+  @Test
+  void testToEntity_DoesNotModifyOriginalDto() {
+    PaymentCardDto originalDto = new PaymentCardDto();
+    originalDto.setId(10L);
+    originalDto.setNumber("1234567890123456");
+    originalDto.setHolder("John Doe");
+    originalDto.setUserId(1L);
+
+    PaymentCardDto copyDto = new PaymentCardDto();
+    copyDto.setId(originalDto.getId());
+    copyDto.setNumber(originalDto.getNumber());
+    copyDto.setHolder(originalDto.getHolder());
+    copyDto.setUserId(originalDto.getUserId());
+
+    cardMapper.toEntity(originalDto);
+
+    assertEquals(copyDto.getId(), originalDto.getId());
+    assertEquals(copyDto.getNumber(), originalDto.getNumber());
+    assertEquals(copyDto.getHolder(), originalDto.getHolder());
+    assertEquals(copyDto.getUserId(), originalDto.getUserId());
+  }
 }
