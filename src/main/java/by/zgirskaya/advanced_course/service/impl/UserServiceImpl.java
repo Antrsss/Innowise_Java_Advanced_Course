@@ -49,7 +49,10 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   @CacheEvict(value = "users", key = "#id")
-  public void setUserStatus(Long id, boolean status) {
+  public void setUserStatus(Long id, boolean status) throws UserServiceException {
+    if (id == null) {
+      throw new UserServiceException("User id is null!");
+    }
     userDao.setUserStatus(id, status);
     cardDao.setCardsStatusByUserId(id, status);
   }

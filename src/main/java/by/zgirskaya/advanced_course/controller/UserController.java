@@ -47,13 +47,13 @@ public class UserController {
   }
 
   @PatchMapping("/{id}/status")
-  public ResponseEntity<Void> setStatus(@PathVariable Long id, @RequestParam boolean active) {
+  public ResponseEntity<Void> setStatus(@PathVariable Long id, @RequestParam boolean active) throws UserServiceException {
     userService.setUserStatus(id, active);
     return ResponseEntity.ok().build();
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+  public ResponseEntity<Void> deleteUser(@PathVariable Long id) throws UserServiceException {
     userService.setUserStatus(id, false);
     return ResponseEntity.noContent().build();
   }

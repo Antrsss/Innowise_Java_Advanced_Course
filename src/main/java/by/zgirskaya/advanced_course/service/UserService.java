@@ -9,5 +9,5 @@ public interface UserService {
   User createUser(User user) throws UserServiceException;
   User findUserById(Long id) throws UserServiceException;
   Page<User> findAll(String name, String surname, Pageable pageable);
-  void setUserStatus(Long id, boolean status);
+  void setUserStatus(Long id, boolean status) throws UserServiceException;
 }
