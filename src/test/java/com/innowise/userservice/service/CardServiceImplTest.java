@@ -7,21 +7,25 @@ import com.innowise.userservice.entity.User;
 import com.innowise.userservice.exception.EntityNotFoundException;
 import com.innowise.userservice.exception.ResourceConflictException;
 import com.innowise.userservice.service.impl.CardServiceImpl;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -29,134 +33,194 @@ import static org.mockito.Mockito.*;
 class CardServiceImplTest {
 
   @Mock
+  private UserDao userDao;
+
+  @Mock
   private CardDao cardDao;
 
   @Mock
-  private UserDao userDao;
+  private CacheManager cacheManager;
 
   @InjectMocks
   private CardServiceImpl cardService;
 
   @Test
+  @DisplayName("Should create card when limit is not reached and number is unique")
   void createCard_Success() throws EntityNotFoundException, ResourceConflictException {
+    Long userId = 1L;
     User user = new User();
-    user.setId(1L);
-    user.setActive(true);
-    user.setCards(new ArrayList<>());
+    user.setId(userId);
 
     PaymentCard card = new PaymentCard();
     card.setUser(user);
+    card.setNumber("1234567890123456");
 
-    when(userDao.findByIdWithLock(1L)).thenReturn(Optional.of(user));
-    when(cardDao.countByUserId(1L)).thenReturn(0L);
+    when(userDao.findByIdWithLock(userId)).thenReturn(Optional.of(user));
+    when(cardDao.existsByNumberAndActiveTrue(card.getNumber())).thenReturn(false);
+    when(cardDao.countByUserId(userId)).thenReturn(2L);
     when(cardDao.save(any(PaymentCard.class))).thenReturn(card);
 
     PaymentCard result = cardService.createCard(card);
 
-    assertNotNull(result);
-    verify(cardDao, times(1)).save(card);
+    assertThat(result).isNotNull();
+    verify(cardDao).save(card);
   }
 
   @Test
-  void findAll_ReturnsPage() {
-    Pageable pageable = Pageable.unpaged();
-    Page<PaymentCard> page = new PageImpl<>(List.of(new PaymentCard()));
-
-    when(cardDao.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
-
-    Page<PaymentCard> result = cardService.findAll("Ivan", "Ivanov", pageable);
-
-    assertNotNull(result);
-    assertEquals(1, result.getContent().size());
-  }
-
-  @Test
-  void createCard_WithNullUser_ThrowsException() {
+  @DisplayName("Should throw ResourceConflictException when card number already exists")
+  void createCard_DuplicateNumber() {
+    Long userId = 1L;
+    User user = new User();
+    user.setId(userId);
     PaymentCard card = new PaymentCard();
-    card.setUser(null);
+    card.setUser(user);
+    card.setNumber("1111222233334444");
 
-    assertThrows(NullPointerException.class,
-        () -> cardService.createCard(card));
+    when(userDao.findByIdWithLock(userId)).thenReturn(Optional.of(user));
+    when(cardDao.existsByNumberAndActiveTrue("1111222233334444")).thenReturn(true);
+
+    assertThatThrownBy(() -> cardService.createCard(card))
+        .isInstanceOf(ResourceConflictException.class)
+        .hasMessage("Card with that number already exists");
   }
 
+  @Test
+  @DisplayName("Should throw ResourceConflictException when user has 5 cards")
+  void createCard_LimitReached() {
+    Long userId = 1L;
+    User user = new User();
+    user.setId(userId);
+    PaymentCard card = new PaymentCard();
+    card.setUser(user);
+
+    when(userDao.findByIdWithLock(userId)).thenReturn(Optional.of(user));
+    when(cardDao.existsByNumberAndActiveTrue(any())).thenReturn(false);
+    when(cardDao.countByUserId(userId)).thenReturn(5L);
+
+    assertThatThrownBy(() -> cardService.createCard(card))
+        .isInstanceOf(ResourceConflictException.class)
+        .hasMessage("User already has 5 cards. Limit reached!");
+  }
 
   @Test
-  void findCardsByUserId_ReturnsList() {
+  @DisplayName("Should throw EntityNotFoundException when user does not exist")
+  void createCard_UserNotFound() {
+    Long userId = 99L;
+    User user = new User();
+    user.setId(userId);
+    PaymentCard card = new PaymentCard();
+    card.setUser(user);
+
+    when(userDao.findByIdWithLock(userId)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> cardService.createCard(card))
+        .isInstanceOf(EntityNotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("Should find card by id")
+  void findCardById_Success() throws EntityNotFoundException {
+    Long cardId = 1L;
+    PaymentCard card = new PaymentCard();
+    card.setId(cardId);
+
+    when(cardDao.findById(cardId)).thenReturn(Optional.of(card));
+
+    PaymentCard result = cardService.findCardById(cardId);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo(cardId);
+  }
+
+  @Test
+  @DisplayName("Should throw EntityNotFoundException when card by id not found")
+  void findCardById_NotFound() {
+    Long cardId = 1L;
+    when(cardDao.findById(cardId)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> cardService.findCardById(cardId))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessageContaining("Card not found");
+  }
+
+  @Test
+  @DisplayName("Should find cards by user id")
+  void findCardsByUserId_Success() {
     Long userId = 1L;
-    List<PaymentCard> expectedCards = List.of(new PaymentCard(), new PaymentCard());
-    when(cardDao.findCardsByUserId(userId)).thenReturn(expectedCards);
+    List<PaymentCard> cards = List.of(new PaymentCard(), new PaymentCard());
+
+    when(cardDao.findCardsByUserId(userId)).thenReturn(cards);
 
     List<PaymentCard> result = cardService.findCardsByUserId(userId);
 
-    assertNotNull(result);
-    assertEquals(2, result.size());
-    verify(cardDao, times(1)).findCardsByUserId(userId);
+    assertThat(result).hasSize(2);
+    verify(cardDao).findCardsByUserId(userId);
   }
 
   @Test
-  void findCardsByUserId_ReturnsEmptyList_WhenNoCards() {
-    Long userId = 1L;
-    when(cardDao.findCardsByUserId(userId)).thenReturn(List.of());
-
-    List<PaymentCard> result = cardService.findCardsByUserId(userId);
-
-    assertNotNull(result);
-    assertTrue(result.isEmpty());
-    verify(cardDao, times(1)).findCardsByUserId(userId);
-  }
-
-  @Test
-  void findAll_WithNullNameAndNullSurname_ReturnsAllCards() {
-    Pageable pageable = Pageable.unpaged();
+  @DisplayName("Should find all cards with pagination and specification")
+  void findAll_Success() {
+    Pageable pageable = PageRequest.of(0, 10);
     Page<PaymentCard> page = new PageImpl<>(List.of(new PaymentCard()));
 
     when(cardDao.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-    Page<PaymentCard> result = cardService.findAll(null, null, pageable);
+    Page<PaymentCard> result = cardService.findAll("John", "Doe", pageable);
 
-    assertNotNull(result);
-    assertEquals(1, result.getContent().size());
-    verify(cardDao, times(1)).findAll(any(Specification.class), eq(pageable));
+    assertThat(result).isNotNull();
+    assertThat(result.getContent()).hasSize(1);
   }
 
   @Test
-  void findAll_WithOnlyName_ReturnsFilteredCards() {
-    Pageable pageable = Pageable.unpaged();
-    Page<PaymentCard> page = new PageImpl<>(List.of(new PaymentCard()));
+  @DisplayName("Should set card status and evict cache")
+  void setCardStatus_Success() throws EntityNotFoundException {
+    Long cardId = 1L;
+    Long userId = 10L;
+    User user = new User();
+    user.setId(userId);
+    PaymentCard card = new PaymentCard();
+    card.setId(cardId);
+    card.setUser(user);
 
-    when(cardDao.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+    Cache mockCache = mock(Cache.class);
 
-    Page<PaymentCard> result = cardService.findAll("Ivan", null, pageable);
+    when(cardDao.findById(cardId)).thenReturn(Optional.of(card));
+    when(cacheManager.getCache("users")).thenReturn(mockCache);
 
-    assertNotNull(result);
-    assertEquals(1, result.getContent().size());
-    verify(cardDao, times(1)).findAll(any(Specification.class), eq(pageable));
+    cardService.setCardStatus(cardId, true);
+
+    verify(cardDao).setCardStatus(cardId, true);
+    verify(mockCache).evict(userId);
   }
 
   @Test
-  void findAll_WithOnlySurname_ReturnsFilteredCards() {
-    Pageable pageable = Pageable.unpaged();
-    Page<PaymentCard> page = new PageImpl<>(List.of(new PaymentCard()));
+  @DisplayName("Should update card status even if cache manager returns null cache")
+  void setCardStatus_CacheIsNull_Success() throws EntityNotFoundException {
+    Long cardId = 1L;
+    Long userId = 10L;
+    User user = new User();
+    user.setId(userId);
 
-    when(cardDao.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+    PaymentCard card = new PaymentCard();
+    card.setId(cardId);
+    card.setUser(user);
 
-    Page<PaymentCard> result = cardService.findAll(null, "Ivanov", pageable);
+    when(cardDao.findById(cardId)).thenReturn(Optional.of(card));
+    when(cacheManager.getCache("users")).thenReturn(null);
 
-    assertNotNull(result);
-    assertEquals(1, result.getContent().size());
-    verify(cardDao, times(1)).findAll(any(Specification.class), eq(pageable));
+    cardService.setCardStatus(cardId, true);
+
+    verify(cardDao).setCardStatus(cardId, true);
+    verify(cacheManager).getCache("users");
   }
 
   @Test
-  void findAll_WithEmptyPageable_ReturnsPage() {
-    Pageable pageable = Pageable.unpaged();
-    Page<PaymentCard> page = new PageImpl<>(List.of());
+  @DisplayName("Should throw EntityNotFoundException during status update if card missing")
+  void setCardStatus_CardNotFound() {
+    Long cardId = 1L;
+    when(cardDao.findById(cardId)).thenReturn(Optional.empty());
 
-    when(cardDao.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
-
-    Page<PaymentCard> result = cardService.findAll("Ivan", "Ivanov", pageable);
-
-    assertNotNull(result);
-    assertTrue(result.getContent().isEmpty());
+    assertThatThrownBy(() -> cardService.setCardStatus(cardId, true))
+        .isInstanceOf(EntityNotFoundException.class);
   }
 }
