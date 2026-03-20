@@ -8,11 +8,11 @@
 		<version>4.0.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>by.zgirskaya.course</groupId>
-	<artifactId>advanced_course</artifactId>
+	<groupId>com.innowise.userservice</groupId>
+	<artifactId>user-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>advanced_course</name>
-	<description>advanced_course</description>
+	<name>user-service</name>
+	<description>user-service</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -151,7 +151,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>by.zgirskaya.advanced_course.AdvancedCourseApplication</mainClass>
+					<mainClass>com.innowise.userservice.UserServiceApplication</mainClass>
 				</configuration>
 			</plugin>
 			<plugin>
