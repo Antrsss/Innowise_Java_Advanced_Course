@@ -12,8 +12,11 @@ public class PaymentCardDto {
   private String number;
 
   @NotBlank(message = "Holder name is required")
+  @Pattern(regexp = "^[A-Z ]+$", message = "Only uppercase Latin letters allowed")
   private String holder;
 
+  @NotBlank(message = "Expiration date is required")
+  @Pattern(regexp = "^(0[1-9]|1[0-2])/\\d{2}$", message = "Use MM/YY format")
   private String expirationDate;
   private boolean active;
 

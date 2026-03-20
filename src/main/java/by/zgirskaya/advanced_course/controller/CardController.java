@@ -2,7 +2,8 @@ package by.zgirskaya.advanced_course.controller;
 
 import by.zgirskaya.advanced_course.dto.PaymentCardDto;
 import by.zgirskaya.advanced_course.entity.PaymentCard;
-import by.zgirskaya.advanced_course.exception.CardServiceException;
+import by.zgirskaya.advanced_course.exception.EntityNotFoundException;
+import by.zgirskaya.advanced_course.exception.ResourceConflictException;
 import by.zgirskaya.advanced_course.mapper.CardMapper;
 import by.zgirskaya.advanced_course.service.CardService;
 import jakarta.validation.Valid;
@@ -13,8 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/cards")
 @RequiredArgsConstructor
@@ -24,22 +23,18 @@ public class CardController {
   private final CardMapper cardMapper;
 
   @PostMapping
-  public ResponseEntity<PaymentCardDto> createCard(@Valid @RequestBody PaymentCardDto cardDto) throws CardServiceException {
+  public ResponseEntity<PaymentCardDto> createCard(@Valid @RequestBody PaymentCardDto cardDto)
+      throws EntityNotFoundException, ResourceConflictException {
     PaymentCard card = cardMapper.toEntity(cardDto);
     PaymentCard savedCard = cardService.createCard(card);
     return new ResponseEntity<>(cardMapper.toDto(savedCard), HttpStatus.CREATED);
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<PaymentCardDto> getCardById(@PathVariable Long id) throws CardServiceException {
+  public ResponseEntity<PaymentCardDto> getCardById(@PathVariable Long id)
+      throws EntityNotFoundException {
     PaymentCard card = cardService.findCardById(id);
     return ResponseEntity.ok(cardMapper.toDto(card));
-  }
-
-  @GetMapping("/user/{userId}")
-  public ResponseEntity<List<PaymentCardDto>> getCardsByUserId(@PathVariable Long userId) {
-    List<PaymentCard> cards = cardService.findCardsByUserId(userId);
-    return ResponseEntity.ok(cards.stream().map(cardMapper::toDto).toList());
   }
 
   @GetMapping
@@ -57,14 +52,14 @@ public class CardController {
   @PatchMapping("/{id}/status")
   public ResponseEntity<Void> setStatus(
       @PathVariable Long id,
-      @RequestParam boolean active) throws CardServiceException {
+      @RequestParam boolean active) throws EntityNotFoundException {
     cardService.setCardStatus(id, active);
     return ResponseEntity.ok().build();
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteCard(@PathVariable Long id)
-      throws CardServiceException {
+      throws EntityNotFoundException {
     cardService.setCardStatus(id, false);
     return ResponseEntity.noContent().build();
   }

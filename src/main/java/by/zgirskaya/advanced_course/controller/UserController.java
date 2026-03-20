@@ -1,9 +1,14 @@
 package by.zgirskaya.advanced_course.controller;
 
+import by.zgirskaya.advanced_course.dto.PaymentCardDto;
 import by.zgirskaya.advanced_course.dto.UserDto;
+import by.zgirskaya.advanced_course.entity.PaymentCard;
 import by.zgirskaya.advanced_course.entity.User;
-import by.zgirskaya.advanced_course.exception.UserServiceException;
+import by.zgirskaya.advanced_course.exception.EntityNotFoundException;
+import by.zgirskaya.advanced_course.exception.ResourceConflictException;
+import by.zgirskaya.advanced_course.mapper.CardMapper;
 import by.zgirskaya.advanced_course.mapper.UserMapper;
+import by.zgirskaya.advanced_course.service.CardService;
 import by.zgirskaya.advanced_course.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -21,16 +28,21 @@ public class UserController {
   private final UserService userService;
   private final UserMapper userMapper;
 
+  private final CardService cardService;
+  private final CardMapper cardMapper;
+
   @PostMapping
-  public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) throws UserServiceException {
+  public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto)
+      throws ResourceConflictException {
     User user = userMapper.toEntity(userDto);
     User savedUser = userService.createUser(user);
     return new ResponseEntity<>(userMapper.toDto(savedUser), HttpStatus.CREATED);
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<UserDto> getUserById(@PathVariable Long id) throws UserServiceException {
-    User user = userService.findUserById(id);
+  public ResponseEntity<UserDto> getUserById(@PathVariable Long id)
+      throws EntityNotFoundException {
+    User user = userService.findActiveUserById(id);
     return ResponseEntity.ok(userMapper.toDto(user));
   }
 
@@ -46,14 +58,22 @@ public class UserController {
     return ResponseEntity.ok(dtoPage);
   }
 
+  @GetMapping("/{id}/cards")
+  public ResponseEntity<List<PaymentCardDto>> getCardsByUserId(@PathVariable Long id) {
+    List<PaymentCard> cards = cardService.findCardsByUserId(id);
+    return ResponseEntity.ok(cards.stream().map(cardMapper::toDto).toList());
+  }
+
   @PatchMapping("/{id}/status")
-  public ResponseEntity<Void> setStatus(@PathVariable Long id, @RequestParam boolean active) throws UserServiceException {
+  public ResponseEntity<Void> setStatus(@PathVariable Long id, @RequestParam boolean active)
+      throws EntityNotFoundException {
     userService.setUserStatus(id, active);
     return ResponseEntity.ok().build();
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteUser(@PathVariable Long id) throws UserServiceException {
+  public ResponseEntity<Void> deleteUser(@PathVariable Long id)
+      throws EntityNotFoundException {
     userService.setUserStatus(id, false);
     return ResponseEntity.noContent().build();
   }

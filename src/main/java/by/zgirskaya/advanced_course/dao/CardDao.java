@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface CardDao extends JpaRepository<PaymentCard, Long>, JpaSpecificationExecutor<PaymentCard> {
 
-  List<PaymentCard> findCardsByUserId(@Param("userId") Long userId);
+  List<PaymentCard> findCardsByUserId(Long userId);
 
   Long countByUserId(Long userId);
 
@@ -22,4 +22,6 @@ public interface CardDao extends JpaRepository<PaymentCard, Long>, JpaSpecificat
   @Modifying
   @Query("UPDATE PaymentCard pc SET pc.active = :status WHERE pc.user.id = :userId")
   void setCardsStatusByUserId(@Param("userId") Long userId, @Param("status") boolean status);
+
+  boolean existsByNumberAndActiveTrue(String number);
 }

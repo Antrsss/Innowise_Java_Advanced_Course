@@ -2,7 +2,8 @@ package by.zgirskaya.advanced_course.service.impl;
 
 import by.zgirskaya.advanced_course.dao.CardDao;
 import by.zgirskaya.advanced_course.entity.User;
-import by.zgirskaya.advanced_course.exception.UserServiceException;
+import by.zgirskaya.advanced_course.exception.EntityNotFoundException;
+import by.zgirskaya.advanced_course.exception.ResourceConflictException;
 import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.service.UserService;
 import by.zgirskaya.advanced_course.specification.UserSpecifications;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
@@ -23,22 +25,22 @@ public class UserServiceImpl implements UserService {
   private final CardDao cardDao;
 
   @Override
-  @Transactional
-  public User createUser(User user) throws UserServiceException {
-    if (user.getCards() != null && user.getCards().size() > 5) {
-      throw new UserServiceException("User cannot have more than 5 cards!");
+  public User createUser(User user) throws ResourceConflictException {
+    if (userDao.existsByEmailAndActiveTrue(user.getEmail())) {
+      throw new ResourceConflictException("User already exists");
     }
     return userDao.save(user);
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   @Cacheable(value = "users", key = "#id")
-  public User findUserById(Long id) throws UserServiceException {
-    return userDao.findByIdWithCards(id).orElseThrow(() -> new UserServiceException("User not found!"));
+  public User findActiveUserById(Long id) throws EntityNotFoundException {
+    return userDao.findActiveUserByIdWithCards(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Page<User> findAll(String name, String surname, Pageable pageable) {
     Specification<User> spec = Specification.where(UserSpecifications.hasName(name))
         .and(UserSpecifications.hasSurname(surname))
@@ -47,11 +49,10 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  @Transactional
   @CacheEvict(value = "users", key = "#id")
-  public void setUserStatus(Long id, boolean status) throws UserServiceException {
+  public void setUserStatus(Long id, boolean status) throws EntityNotFoundException {
     if (id == null) {
-      throw new UserServiceException("User id is null!");
+      throw new EntityNotFoundException("User id is null");
     }
     userDao.setUserStatus(id, status);
     cardDao.setCardsStatusByUserId(id, status);

@@ -3,10 +3,13 @@ package by.zgirskaya.advanced_course.service.impl;
 import by.zgirskaya.advanced_course.dao.CardDao;
 import by.zgirskaya.advanced_course.dao.UserDao;
 import by.zgirskaya.advanced_course.entity.PaymentCard;
-import by.zgirskaya.advanced_course.exception.CardServiceException;
+import by.zgirskaya.advanced_course.exception.EntityNotFoundException;
+import by.zgirskaya.advanced_course.exception.ResourceConflictException;
 import by.zgirskaya.advanced_course.service.CardService;
 import by.zgirskaya.advanced_course.specification.CardSpecifications;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,40 +20,48 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
 
   private final UserDao userDao;
   private final CardDao cardDao;
+  private final CacheManager cacheManager;
 
   @Override
-  @Transactional
   @CacheEvict(value = "users", key = "#card.user.id")
-  public PaymentCard createCard(PaymentCard card) throws CardServiceException {
+  public PaymentCard createCard(PaymentCard card) throws EntityNotFoundException, ResourceConflictException {
     Long userId = card.getUser().getId();
 
     userDao.findByIdWithLock(userId)
-        .orElseThrow(() -> new CardServiceException("User not found or inactive!"));
+        .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+    if(cardDao.existsByNumberAndActiveTrue(card.getNumber())) {
+      throw new ResourceConflictException("Card with that number already exists");
+    }
 
     if (cardDao.countByUserId(userId) >= 5) {
-      throw new CardServiceException("User already has 5 cards. Limit reached!");
+      throw new ResourceConflictException("User already has 5 cards. Limit reached!");
     }
 
     return cardDao.save(card);
   }
 
   @Override
-  public PaymentCard findCardById(Long id) throws CardServiceException {
+  @Transactional(readOnly = true)
+  public PaymentCard findCardById(Long id) throws EntityNotFoundException {
     return cardDao.findById(id)
-        .orElseThrow(() -> new CardServiceException("Card not found with id: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Card not found with id: " + id));
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<PaymentCard> findCardsByUserId(Long id) {
     return cardDao.findCardsByUserId(id);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Page<PaymentCard> findAll(String name, String surname, Pageable pageable) {
     Specification<PaymentCard> spec = Specification
         .where(CardSpecifications.hasUserName(name))
@@ -60,13 +71,14 @@ public class CardServiceImpl implements CardService {
   }
 
   @Override
-  @Transactional
-  @CacheEvict(value = "users", key = "#result")
-  public Long setCardStatus(Long id, boolean status) throws CardServiceException {
+  public void setCardStatus(Long id, boolean status) throws EntityNotFoundException {
     PaymentCard card = cardDao.findById(id)
-        .orElseThrow(() -> new CardServiceException("Card not found"));
+        .orElseThrow(() -> new EntityNotFoundException("Card not found"));
     cardDao.setCardStatus(id, status);
 
-    return card.getUser().getId();
+    Cache usersCache = cacheManager.getCache("users");
+    if (usersCache != null) {
+      usersCache.evict(card.getUser().getId());
+    }
   }
 }
