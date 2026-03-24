@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: advanced_course
+  profiles:
+    active: local
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+
+logging:
+  level:
+    org.springframework.cache: TRACE
+    org.springframework.data.redis: TRACE
