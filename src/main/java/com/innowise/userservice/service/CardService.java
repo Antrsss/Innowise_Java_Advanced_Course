@@ -14,4 +14,5 @@ public interface CardService {
   List<PaymentCard> findCardsByUserId(Long id);
   Page<PaymentCard> findAll(String name, String surname, Pageable pageable);
   void setCardStatus(Long id, boolean status) throws EntityNotFoundException;
+  boolean isOwner(Long cardId, Long userId);
 }

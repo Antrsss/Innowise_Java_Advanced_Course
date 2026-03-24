@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,14 +35,17 @@ public class UserController {
   @PostMapping
   public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto)
       throws ResourceConflictException {
+
     User user = userMapper.toEntity(userDto);
     User savedUser = userService.createUser(user);
     return new ResponseEntity<>(userMapper.toDto(savedUser), HttpStatus.CREATED);
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
   public ResponseEntity<UserDto> getUserById(@PathVariable Long id)
       throws EntityNotFoundException {
+
     User user = userService.findActiveUserById(id);
     return ResponseEntity.ok(userMapper.toDto(user));
   }
@@ -59,7 +63,9 @@ public class UserController {
   }
 
   @GetMapping("/{id}/cards")
+  @PreAuthorize("hasRole('ADMIN') or id == #authentication.principal.id")
   public ResponseEntity<List<PaymentCardDto>> getCardsByUserId(@PathVariable Long id) {
+
     List<PaymentCard> cards = cardService.findCardsByUserId(id);
     return ResponseEntity.ok(cards.stream().map(cardMapper::toDto).toList());
   }
@@ -67,6 +73,7 @@ public class UserController {
   @PatchMapping("/{id}/status")
   public ResponseEntity<Void> setStatus(@PathVariable Long id, @RequestParam boolean active)
       throws EntityNotFoundException {
+
     userService.setUserStatus(id, active);
     return ResponseEntity.ok().build();
   }
@@ -74,6 +81,7 @@ public class UserController {
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteUser(@PathVariable Long id)
       throws EntityNotFoundException {
+
     userService.setUserStatus(id, false);
     return ResponseEntity.noContent().build();
   }

@@ -24,4 +24,6 @@ public interface CardDao extends JpaRepository<PaymentCard, Long>, JpaSpecificat
   void setCardsStatusByUserId(@Param("userId") Long userId, @Param("status") boolean status);
 
   boolean existsByNumberAndActiveTrue(String number);
+
+  boolean existsByIdAndUserId(Long cardId, Long userId);
 }

@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service
+@Service("cardService")
 @Transactional
 @RequiredArgsConstructor
 public class CardServiceImpl implements CardService {
@@ -80,5 +80,10 @@ public class CardServiceImpl implements CardService {
     if (usersCache != null) {
       usersCache.evict(card.getUser().getId());
     }
+  }
+
+  @Transactional(readOnly = true)
+  public boolean isOwner(Long cardId, Long userId) {
+    return cardDao.existsByIdAndUserId(cardId, userId);
   }
 }
