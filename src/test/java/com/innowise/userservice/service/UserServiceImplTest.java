@@ -95,6 +95,32 @@ class UserServiceImplTest {
   }
 
   @Test
+  @DisplayName(("Should find user by email when user is active"))
+  void findUserById_Success() throws EntityNotFoundException {
+    String email = "test@innowise.com";
+    User user = new User();
+    user.setEmail(email);
+
+    when(userDao.findByEmailWithLock(email)).thenReturn(Optional.of(user));
+
+    User result = userService.findActiveUserByEmail(email);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getEmail()).isEqualTo(email);
+  }
+
+  @Test
+  @DisplayName("Should throw EntityNotFoundException when active user not found")
+  void findActiveUserByEmail_NotFound() {
+    String email = "test@innowise.com";
+    when(userDao.findByEmailWithLock(email)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> userService.findActiveUserByEmail(email))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessageContaining("User not found");
+  }
+
+  @Test
   @DisplayName("Should throw EntityNotFoundException when user id is null in setUserStatus")
   void setUserStatus_IdIsNull() {
     assertThatThrownBy(() -> userService.setUserStatus(null, true))

@@ -30,7 +30,20 @@
 		<java.version>21</java.version>
 		<sonar.organization>antrsss</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.coverage.exclusions>
+			src/main/java/com/innowise/userservice/config/**,
+			src/main/java/com/innowise/userservice/controller/**,
+			src/main/java/com/innowise/userservice/dao/**,
+			src/main/java/com/innowise/userservice/dto/**,
+			src/main/java/com/innowise/userservice/entity/**,
+			src/main/java/com/innowise/userservice/exception/**,
+			src/main/java/com/innowise/userservice/mapper/**,
+			src/main/java/com/innowise/userservice/specification/**,
+			src/main/java/com/innowise/userservice/UserServiceApplication.java
+		</sonar.coverage.exclusions>
+		<sonar.coverage.jacoco.xmlReportPaths>
+			${project.build.directory}/site/jacoco/jacoco.xml
+		</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
