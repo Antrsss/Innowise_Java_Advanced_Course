@@ -16,6 +16,10 @@ public interface UserDao extends JpaRepository<User, Long>, JpaSpecificationExec
   @Query("SELECT u FROM User u WHERE u.id = :id AND u.active = true")
   Optional<User> findByIdWithLock(Long id);
 
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT u FROM User u WHERE u.email = :email AND u.active = true")
+  Optional<User> findByEmailWithLock(String email);
+
   @Modifying
   @Query("UPDATE User u SET u.active = :status WHERE u.id = :id")
   void setUserStatus(@Param("id") Long id, @Param("status") boolean status);

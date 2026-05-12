@@ -36,7 +36,14 @@ public class UserServiceImpl implements UserService {
   @Transactional(readOnly = true)
   @Cacheable(value = "users", key = "#id")
   public User findActiveUserById(Long id) throws EntityNotFoundException {
-    return userDao.findActiveUserByIdWithCards(id).orElseThrow(() -> new EntityNotFoundException("User not found"));
+    return userDao.findActiveUserByIdWithCards(id)
+        .orElseThrow(() -> new EntityNotFoundException("User not found"));
+  }
+
+  @Override
+  public User findActiveUserByEmail(String email) throws EntityNotFoundException {
+    return userDao.findByEmailWithLock(email)
+        .orElseThrow(() -> new EntityNotFoundException("User not found"));
   }
 
   @Override

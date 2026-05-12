@@ -21,3 +21,11 @@ logging:
   level:
     org.springframework.cache: TRACE
     org.springframework.data.redis: TRACE
+
+management:
+  health:
+    probes:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always

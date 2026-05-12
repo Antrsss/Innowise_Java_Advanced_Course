@@ -42,7 +42,16 @@ public class UserController {
   @GetMapping("/{id}")
   public ResponseEntity<UserDto> getUserById(@PathVariable Long id)
       throws EntityNotFoundException {
+
     User user = userService.findActiveUserById(id);
+    return ResponseEntity.ok(userMapper.toDto(user));
+  }
+
+  @GetMapping("/search")
+  public ResponseEntity<UserDto> getUserByEmail(@RequestParam String email)
+      throws EntityNotFoundException {
+
+    User user = userService.findActiveUserByEmail(email);
     return ResponseEntity.ok(userMapper.toDto(user));
   }
 

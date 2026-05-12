@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 public interface UserService {
   User createUser(User user) throws ResourceConflictException;
   User findActiveUserById(Long id) throws EntityNotFoundException;
+  User findActiveUserByEmail(String email) throws EntityNotFoundException;
   Page<User> findAll(String name, String surname, Pageable pageable);
   void setUserStatus(Long id, boolean status) throws EntityNotFoundException;
 }
